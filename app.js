@@ -128,42 +128,100 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // --- Core Function Wrapping ---
+       // --- Core Function Wrapping ---
     function wrapCoreApkgFunctions() {
+
+        // Helper function needed by the tabulate wrapper
+        function collectFieldNamesFromTable(tableElement, originalColumns = null) {
+            if (!tableElement) return;
+            const headerCells = tableElement.querySelectorAll('th');
+            // Ensure we only map fields for tables within the #anki container
+            const ankiContainer = document.getElementById('anki');
+            if (!ankiContainer || !ankiContainer.contains(tableElement)) {
+                 console.warn("Skipping field collection for table outside #anki:", tableElement);
+                 return;
+            }
+            const tableIndex = Array.from(ankiContainer.querySelectorAll('table')).indexOf(tableElement);
+
+            if (tableIndex === -1) {
+                console.warn("Could not determine index for table within #anki:", tableElement);
+                return;
+            }
+
+            // Prefer originalColumns if available, otherwise read from header (stripping icons/spaces)
+            const fieldNames = originalColumns ? [...originalColumns] : Array.from(headerCells).map(cell => cell.textContent.trim().replace(/[\u25B2\u25BC\u2195\s]+$/,''));
+
+            currentDeckFieldMap[tableIndex] = fieldNames;
+            fieldNames.forEach(field => { if(field) allFields.add(field); }); // Add only non-empty field names
+            console.log(`Collected fields for table index ${tableIndex}:`, fieldNames);
+            console.log("All unique fields so far:", Array.from(allFields));
+        }
+
+
         // Wrap tabulate from apkg.js
         if (typeof window.tabulate === 'function' && !originalTabulate) {
             originalTabulate = window.tabulate;
-            window.tabulate = function(datatable, columns, containerString) {
+            window.tabulate = function(datatable, columns, containerString) { // Ensure args are captured
                 console.log(`Wrapped tabulate called for container: ${containerString}`);
-                // Clear previous content if needed (check containerString)
+
+                // --- Strip Images Logic ---
+                const showImages = document.getElementById('showImage')?.checked || false;
+                let dataToRender; // Variable to hold the potentially modified data
+
+                if (!showImages && Array.isArray(datatable) && columns) { // Check columns exist
+                    console.log("Image display disabled, stripping <img> tags from data before tabulating.");
+                    // Create a new array with processed data
+                    dataToRender = datatable.map(row => {
+                        const newRow = {};
+                        columns.forEach(col => {
+                            // Ensure row has the property before accessing
+                            const value = row.hasOwnProperty(col) ? row[col] : '';
+                            // Check if the value is a string and contains an img tag
+                            if (typeof value === 'string' && /<img/i.test(value)) {
+                                // Replace img tags with a placeholder
+                                newRow[col] = value.replace(/<img[^>]*>/gi, '[Image]');
+                            } else {
+                                newRow[col] = value; // Keep other values
+                            }
+                        });
+                        return newRow;
+                    });
+                } else {
+                    dataToRender = datatable; // Use original data
+                }
+                // --- End Strip Images Logic ---
+
+
+                // Clear previous content in main containers
                 const containerElement = d3.select(containerString);
                 if (containerElement && !containerElement.empty()) {
-                    // Only clear specific containers like #anki or #reviews, not dynamically generated ones
                     if (containerString === '#anki' || containerString === '#reviews') {
                          console.log(`Clearing container: ${containerString}`);
-                         containerElement.html(''); // Clear previous results in main areas
-                         // Reset search/field state if clearing main containers
+                         containerElement.html('');
                          if (containerString === '#anki') {
+                             // Reset search state only when clearing the main #anki container
                              allFields.clear();
                              currentDeckFieldMap = {};
+                             resetSearchUI(); // Reset search appearance too
                          }
                     }
                 } else {
                     console.warn(`Container ${containerString} not found or empty for tabulate.`);
                 }
 
-                // Call the original function to create the table
-                const table = originalTabulate(datatable, columns, containerString);
+                // Call the original function with potentially modified data
+                const table = originalTabulate(dataToRender, columns, containerString);
 
                 // --- Enhancements after table creation ---
                 if (table && !table.empty() && table.node()) {
-                     // Check if table element actually exists
                      const tableElement = table.node();
                      enhanceTable(tableElement); // Enhance the newly created table
-                     collectFieldNamesFromTable(tableElement); // Collect fields from this table
+                     // Use original 'columns' for field mapping consistency
+                     collectFieldNamesFromTable(tableElement, columns);
                      updateSearchFields(); // Update dropdown
-                     setupSearchInterface(); // Ensure search is visible
+                     setupSearchInterface(); // Ensure search is visible if content is in #anki
                 } else {
-                    console.warn("Original tabulate did not return a valid table object or node.");
+                    console.warn(`Original tabulate for ${containerString} did not return a valid table object or node.`);
                 }
                 return table; // Return the original result
             };
@@ -179,23 +237,24 @@ document.addEventListener('DOMContentLoaded', function() {
             originalAnkiBinaryToTable = window.ankiBinaryToTable;
             window.ankiBinaryToTable = function(ankiArray, options) {
                 showLoading('Processing Anki Deck...');
-                // Use setTimeout to allow the loading indicator to render before heavy processing
                 setTimeout(() => {
                     try {
-                        // Reset relevant state before loading new deck
-                        d3.select("#anki").html(''); // Clear previous deck display
+                        // Clear previous content and state for #anki explicitly here
+                        // The wrapped tabulate will also clear, but doing it here ensures reset even if tabulate isn't called
+                        d3.select("#anki").html('');
                         allFields.clear();
                         currentDeckFieldMap = {};
-                        resetSearchUI();
+                        resetSearchUI(); // Ensure search UI is hidden/reset
 
                         console.log("Calling original ankiBinaryToTable...");
                         originalAnkiBinaryToTable(ankiArray, options);
-                        // Success/failure is inferred by whether `tabulate` added content
-                        // We add a small delay for DOM updates.
+
+                        // Delay hiding loading slightly to allow DOM updates from tabulate
                         setTimeout(() => {
                             hideLoading();
                             if (document.querySelector('#anki table')) {
                                 showToast('Deck loaded successfully!', 'success');
+                                // setupSearchInterface is called by the wrapped tabulate now
                             } else {
                                 showToast('Deck processed, but no cards found or an error occurred.', 'warning');
                             }
@@ -222,12 +281,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 showLoading('Analyzing Review Data...');
                  setTimeout(() => {
                     try {
-                         d3.select("#reviews").html(''); // Clear previous review display
+                         // Clear previous review display explicitly
+                         d3.select("#reviews").html('');
                          console.log("Calling original ankiSQLToRevlogTable...");
                          originalAnkiSQLToRevlogTable(array, options);
                          // Assumes original function calls tabulate or adds charts
+
+                         // Delay hiding loading slightly
                          setTimeout(() => {
                              hideLoading();
+                             // Check if content was actually added
                              if (document.querySelector('#reviews table') || document.querySelector('#reviews div[id^="chart"]')) {
                                  showToast('Review data analyzed successfully!', 'success');
                              } else {
@@ -250,16 +313,24 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // --- Setup File Input Listeners (using wrapped functions) ---
+        // Ensures these listeners are set up after the core functions are wrapped
         const ankiFileInput = document.getElementById('ankiFile');
         const sqliteFileInput = document.getElementById('sqliteFile');
 
         if (ankiFileInput) {
+             // Remove previous listener if any to prevent duplicates
+             // Note: This simple approach might not work for anonymous functions.
+             // A more robust way involves storing the handler reference.
+             // For now, assuming this is the only place it's added.
+            ankiFileInput.removeEventListener('change', handleFileInput( (data, opts) => window.ankiBinaryToTable(data, opts) ));
             ankiFileInput.addEventListener('change', handleFileInput( (data, opts) => window.ankiBinaryToTable(data, opts) ));
         }
         if (sqliteFileInput) {
+            sqliteFileInput.removeEventListener('change', handleFileInput( (data, opts) => window.ankiSQLToRevlogTable(data, opts) ));
             sqliteFileInput.addEventListener('change', handleFileInput( (data, opts) => window.ankiSQLToRevlogTable(data, opts) ));
         }
-    }
+
+    } // --- End of wrapCoreApkgFunctions ---
 
     // --- Input Handlers ---
     function handleFileInput(processingFunction) {
