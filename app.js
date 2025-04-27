@@ -644,14 +644,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function escapeHtml(text) {
-         const map = {
-             '&': '&',
-             '<': '<',
-             '>': '>',
-             '"': '"',
-             "'": '''
-         };
-         return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+        // Ensure input is a string, return empty string otherwise
+        if (typeof text !== 'string') {
+            return '';
+        }
+        const map = {
+            '&': '&', // Must be first
+            '<': '<',
+            '>': '>',
+            '"': '"',
+            "'": "'" // Use HTML entity for single quote (safer than ')
+        };
+        // Use a single regex pass for better performance
+        return text.replace(/[&<>"']/g, m => map[m]);
     }
 
 
