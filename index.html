@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fuzzy-Anki | Anki Deck Browser</title>
+    <title>Fuzzy-Anki | Smart Deck Browser</title>
 
-    <!-- Fonts -->
+    <!-- Modern Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Symbols+Rounded" rel="stylesheet">
     
     <!-- Stylesheets -->
     <link rel="stylesheet" href="styles.css">
@@ -30,38 +30,63 @@
         <header class="app-header">
             <div class="header-content">
                 <div class="logo">
-                    <span class="material-icons">school</span>
+                    <div class="logo-icon">
+                        <span class="material-symbols-rounded">psychology</span>
+                    </div>
                     <h1>Fuzzy-Anki</h1>
                 </div>
-                <p class="tagline">A professional browser for <a href="http://ankisrs.net" target="_blank">Anki</a> decks and review data</p>
+                <div class="user-info">
+                    <div class="time-display" id="current-time">2025-04-27 13:21:15</div>
+                    <div class="user-profile">
+                        <div class="avatar">
+                            <span>YC</span>
+                        </div>
+                        <span class="username">yiheinchai</span>
+                    </div>
+                </div>
             </div>
         </header>
 
         <!-- Main Content -->
         <main class="main-content">
-            <div class="card intro-card">
-                <h2>Anki Deck Browser</h2>
-                <p>Browse, analyze, and visualize your Anki decks with professional-grade tools.</p>
+            <div class="intro-section">
+                <div class="intro-content">
+                    <h2>Intelligent Anki Browser</h2>
+                    <p>Analyze and visualize your learning data with precision</p>
+                </div>
+                <div class="intro-graphic">
+                    <div class="graphic-element"></div>
+                </div>
             </div>
 
             <!-- Import Options -->
             <div class="card options-card">
-                <div class="tabs">
-                    <button class="tab-btn active" data-tab="browse">Browse Decks</button>
-                    <button class="tab-btn" data-tab="reviews">Review Analysis</button>
+                <div class="card-tabs">
+                    <button class="tab-btn active" data-tab="browse">
+                        <span class="material-symbols-rounded">auto_stories</span>
+                        <span>Browse Decks</span>
+                    </button>
+                    <button class="tab-btn" data-tab="reviews">
+                        <span class="material-symbols-rounded">monitoring</span>
+                        <span>Analysis</span>
+                    </button>
                 </div>
                 
                 <div class="tab-content active" id="browse-tab">
-                    <h3>Import Deck</h3>
+                    <div class="tab-header">
+                        <span class="material-symbols-rounded">cloud_upload</span>
+                        <h3>Import Deck</h3>
+                    </div>
+                    
                     <div class="import-options">
                         <div class="import-option">
                             <div class="option-header">
-                                <span class="material-icons">upload_file</span>
+                                <span class="material-symbols-rounded">folder</span>
                                 <h4>Local Import</h4>
                             </div>
                             <div class="file-input-container">
                                 <label for="ankiFile" class="file-input-label">
-                                    <span class="material-icons">folder_open</span>
+                                    <span class="material-symbols-rounded">upload_file</span>
                                     <span>Select .apkg</span>
                                 </label>
                                 <span class="file-name" id="ankiFileName">No file chosen</span>
@@ -69,18 +94,25 @@
                             </div>
                         </div>
 
-                        <div class="divider"><span>OR</span></div>
+                        <div class="divider">
+                            <span class="divider-line"></span>
+                            <span>OR</span>
+                            <span class="divider-line"></span>
+                        </div>
 
                         <div class="import-option">
                             <div class="option-header">
-                                <span class="material-icons">link</span>
+                                <span class="material-symbols-rounded">link</span>
                                 <h4>URL Import</h4>
                             </div>
                             <div class="url-input-container">
-                                <input type="text" id="ankiURL" placeholder="https://ankiweb.net/shared/download/..." class="url-input">
+                                <div class="input-wrapper">
+                                    <span class="material-symbols-rounded input-icon">public</span>
+                                    <input type="text" id="ankiURL" placeholder="https://ankiweb.net/shared/download/..." class="url-input">
+                                </div>
                                 <button id="ankiURLSubmit" class="btn primary">Import</button>
                             </div>
-                            <p class="hint">Use direct download links from <a href="https://ankiweb.net/shared/decks/" target="_blank">Ankiweb</a></p>
+                            <p class="hint">Use download links from <a href="https://ankiweb.net/shared/decks/" target="_blank">Ankiweb</a></p>
                         </div>
                     </div>
 
@@ -90,22 +122,35 @@
                             <span class="toggle-slider"></span>
                             <span class="toggle-label">Show images in cards</span>
                         </label>
-                        <p class="hint warning">Images may cause longer loading times for large decks</p>
+                        <div class="tag warning">
+                            <span class="material-symbols-rounded">warning</span>
+                            <span>Images may cause longer loading times</span>
+                        </div>
                     </div>
                 </div>
                 
                 <div class="tab-content" id="reviews-tab">
-                    <h3>Review Analysis</h3>
+                    <div class="tab-header">
+                        <span class="material-symbols-rounded">insights</span>
+                        <h3>Performance Analysis</h3>
+                    </div>
+                    
                     <div class="reviews-options">
                         <div class="option-header">
-                            <span class="material-icons">analytics</span>
+                            <span class="material-symbols-rounded">analytics</span>
                             <h4>Import Review Data</h4>
                         </div>
                         
                         <div class="review-settings">
                             <div class="setting-group">
                                 <label for="sqliteLimit">Reviews to analyze:</label>
-                                <input type="number" id="sqliteLimit" min="1" max="1000" value="150" class="number-input">
+                                <div class="number-input-wrapper">
+                                    <input type="number" id="sqliteLimit" min="1" max="1000" value="150" class="number-input">
+                                    <div class="number-controls">
+                                        <button class="number-up"><span class="material-symbols-rounded">keyboard_arrow_up</span></button>
+                                        <button class="number-down"><span class="material-symbols-rounded">keyboard_arrow_down</span></button>
+                                    </div>
+                                </div>
                             </div>
                             
                             <label class="toggle">
@@ -117,7 +162,7 @@
                         
                         <div class="file-input-container">
                             <label for="sqliteFile" class="file-input-label">
-                                <span class="material-icons">folder_open</span>
+                                <span class="material-symbols-rounded">database</span>
                                 <span>Select collection.anki2</span>
                             </label>
                             <span class="file-name" id="sqliteFileName">No file chosen</span>
@@ -133,14 +178,15 @@
             <div id="search-interface" class="card search-card" style="display: none;">
                 <div class="search-header">
                     <div class="option-header">
-                        <span class="material-icons">search</span>
-                        <h4>Search Cards</h4>
+                        <span class="material-symbols-rounded">search</span>
+                        <h4>Smart Search</h4>
                     </div>
                     <div class="search-container">
                         <div class="search-input-wrapper">
-                            <input type="text" id="card-search" placeholder="Search cards..." class="search-input">
+                            <span class="material-symbols-rounded search-icon">search</span>
+                            <input type="text" id="card-search" placeholder="Find anything in your cards..." class="search-input">
                             <button id="clear-search" class="clear-search">
-                                <span class="material-icons">close</span>
+                                <span class="material-symbols-rounded">close</span>
                             </button>
                         </div>
                         <button id="search-button" class="btn primary">Search</button>
@@ -163,15 +209,25 @@
                         
                         <div class="search-fields-container">
                             <label for="search-fields">Search in:</label>
-                            <select id="search-fields" class="search-fields">
-                                <option value="all">All fields</option>
-                                <!-- Dynamic options will be added by JavaScript -->
-                            </select>
+                            <div class="select-wrapper">
+                                <select id="search-fields" class="search-fields">
+                                    <option value="all">All fields</option>
+                                    <!-- Dynamic options will be added by JavaScript -->
+                                </select>
+                                <span class="material-symbols-rounded select-icon">expand_more</span>
+                            </div>
                         </div>
                     </div>
                     
                     <div id="search-stats" class="search-stats">
-                        <span id="results-count">0</span> cards found in <span id="search-time">0</span> ms
+                        <div class="stat-item">
+                            <span class="material-symbols-rounded">find_in_page</span>
+                            <span id="results-count">0</span> results
+                        </div>
+                        <div class="stat-item">
+                            <span class="material-symbols-rounded">timer</span>
+                            <span id="search-time">0</span> ms
+                        </div>
                     </div>
                 </div>
             </div>
@@ -183,7 +239,22 @@
 
         <!-- Footer -->
         <footer class="app-footer">
-            <p>© 2025 Fuzzy-Anki • <a href="https://github.com/fasiha/fuzzy-anki" class="github-link" target="_blank"><span class="material-icons">code</span> GitHub</a> • User: yiheinchai • Last updated: 2025-04-27</p>
+            <div class="footer-content">
+                <div class="footer-branding">
+                    <div class="logo-small">
+                        <span class="material-symbols-rounded">psychology</span>
+                    </div>
+                    <span>Fuzzy-Anki</span>
+                </div>
+                <div class="footer-links">
+                    <a href="https://github.com/fasiha/fuzzy-anki" class="github-link" target="_blank">
+                        <span class="material-symbols-rounded">code</span>
+                        <span>GitHub</span>
+                    </a>
+                    <span class="dot-divider">•</span>
+                    <span class="version">v2.0</span>
+                </div>
+            </div>
         </footer>
     </div>
 
