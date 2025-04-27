@@ -129,6 +129,53 @@
                 </div>
             </div>
 
+            <!-- Search Interface (appears when data is loaded) -->
+            <div id="search-interface" class="card search-card" style="display: none;">
+                <div class="search-header">
+                    <div class="option-header">
+                        <span class="material-icons">search</span>
+                        <h4>Search Cards</h4>
+                    </div>
+                    <div class="search-container">
+                        <div class="search-input-wrapper">
+                            <input type="text" id="card-search" placeholder="Search cards..." class="search-input">
+                            <button id="clear-search" class="clear-search">
+                                <span class="material-icons">close</span>
+                            </button>
+                        </div>
+                        <button id="search-button" class="btn primary">Search</button>
+                    </div>
+                    
+                    <div class="search-options">
+                        <div class="search-option-group">
+                            <label class="toggle">
+                                <input type="checkbox" id="case-sensitive">
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Case sensitive</span>
+                            </label>
+                            
+                            <label class="toggle">
+                                <input type="checkbox" id="regex-search">
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Use regex</span>
+                            </label>
+                        </div>
+                        
+                        <div class="search-fields-container">
+                            <label for="search-fields">Search in:</label>
+                            <select id="search-fields" class="search-fields">
+                                <option value="all">All fields</option>
+                                <!-- Dynamic options will be added by JavaScript -->
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="search-stats" class="search-stats">
+                        <span id="results-count">0</span> cards found in <span id="search-time">0</span> ms
+                    </div>
+                </div>
+            </div>
+
             <!-- Results Section -->
             <div id="anki" class="results-container"></div>
             <div id="reviews" class="results-container"></div>
