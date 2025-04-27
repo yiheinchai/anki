@@ -472,25 +472,41 @@ document.addEventListener('DOMContentLoaded', function() {
          console.log("Search fields dropdown updated.");
     }
 
-    function performSearchWithFeedback() {
-         const searchBtn = document.getElementById('search-button');
-         if (searchBtn) {
-             // Add visual feedback
-             searchBtn.classList.add('searching'); // Simple visual cue (needs CSS)
-             searchBtn.disabled = true;
-             const originalText = searchBtn.textContent;
-             searchBtn.textContent = 'Searching...';
-         }
+      function performSearchWithFeedback() {
+        const searchBtn = document.getElementById('search-button');
+        let originalText = 'Search'; // Default text
 
-         // Use setTimeout to allow UI update before blocking search
-         setTimeout(() => {
-             performSearch();
-             if (searchBtn) {
-                 searchBtn.classList.remove('searching');
-                 searchBtn.disabled = false;
-                 searchBtn.textContent = originalText;
-             }
-         }, 10);
+        if (searchBtn) {
+            // --- Start visual feedback ---
+            originalText = searchBtn.textContent; // Store original text
+            searchBtn.classList.add('searching');
+            searchBtn.disabled = true;
+            searchBtn.textContent = 'Searching...';
+            console.log("Search button disabled, text changed.");
+        }
+
+        // Use setTimeout to allow the UI to update (show 'Searching...')
+        // before potentially blocking the thread with the search operation.
+        setTimeout(() => {
+            try {
+                console.log("Starting performSearch()...");
+                performSearch(); // Execute the actual search logic
+                console.log("performSearch() finished.");
+            } catch (error) {
+                console.error("Error during performSearch:", error);
+                showToast(`Search error: ${error.message || error}`, 'error');
+                // Ensure reset happens even on error
+            } finally {
+                // --- Reset button state ---
+                // This block executes regardless of whether an error occurred in try.
+                if (searchBtn) {
+                    searchBtn.classList.remove('searching');
+                    searchBtn.disabled = false;
+                    searchBtn.textContent = originalText; // Restore original text
+                    console.log("Search button reset.");
+                }
+            }
+        }, 10); // Small delay (10ms) is usually enough for UI repaint
     }
 
     function performSearch() {
