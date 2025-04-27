@@ -1,46 +1,147 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Fuzzy-Anki</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fuzzy-Anki | Modern Anki Deck Browser</title>
 
-    <link rel="stylesheet" type="text/css" href="apkg.css">
-    <link rel="stylesheet" type="text/css" href="c3.min.css">
-
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js" charset="utf-8"></script>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="apkg.css">
+    <link rel="stylesheet" href="c3.min.css">
+    
+    <!-- Scripts -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js" charset="utf-8"></script>
     <script src="https://d3js.org/d3.v3.min.js" charset="utf-8"></script>
-
     <script src="sql-wasm.js" charset="utf-8"></script>
     <script src="c3.min.js" charset="utf-8"></script>
     <script src="unzip.min.js" charset="utf-8"></script>
     <script src="xregexp-all-min.js" charset="utf-8"></script>
     <script src="underscore-min.js" charset="utf-8"></script>
-    <script src="apkg.js" charset="utf-8"></script>
 </head>
-
 <body>
+    <div class="app-container">
+        <!-- Header Section -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="material-icons">school</span>
+                    <h1>Fuzzy-Anki</h1>
+                </div>
+                <p class="tagline">Turn your web browser into an <a href="http://ankisrs.net" target="_blank">Anki</a> deck browser</p>
+            </div>
+        </header>
 
-    <h1 class="heading">Fuzzy-Anki Deck Browser</h1>
-    <h2 class="heading">Turn your web browser into an <a href="http://ankisrs.net">Anki</a> browser!</h2>
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="card intro-card">
+                <h2>Welcome to Fuzzy-Anki</h2>
+                <p>Browse, analyze, and visualize your Anki decks directly in your browser. No installation required!</p>
+            </div>
 
-    <div id="fileSelector">
-    <h3>Browse notes and facts</h3>
-    <ul>
-    <li>Upload an Anki APKG file from your computer: <input type="file" id="ankiFile" name="files">.
-    <li>
-    <em>Experimental!</em> Enter a URL of a public Anki deck: <input type="text" id="ankiURL" size="20"> <button id="ankiURLSubmit">Submit URL</button>. (Note to <a href="https://ankiweb.net/shared/decks/">Ankiweb Shared Decks</a> users: use deck's <span class="ankiweb-download">Download</span> link, not the URL of the page describing it.)
-    <li> <input type="checkbox" id="showImage"> Show images? (If checked, Images will be loaded, but <em>would cause long loading time for big files</em>.)
-    </ul>
+            <!-- Import Options -->
+            <div class="card options-card">
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="browse">Browse Decks</button>
+                    <button class="tab-btn" data-tab="reviews">View Reviews</button>
+                </div>
+                
+                <div class="tab-content active" id="browse-tab">
+                    <h3>Import Anki Deck</h3>
+                    <div class="import-options">
+                        <div class="import-option">
+                            <div class="option-header">
+                                <span class="material-icons">upload_file</span>
+                                <h4>Upload from your computer</h4>
+                            </div>
+                            <div class="file-input-container">
+                                <label for="ankiFile" class="file-input-label">
+                                    <span class="material-icons">folder_open</span>
+                                    <span>Choose .apkg file</span>
+                                </label>
+                                <input type="file" id="ankiFile" name="files" accept=".apkg" class="file-input">
+                                <span class="file-name" id="ankiFileName">No file chosen</span>
+                            </div>
+                        </div>
 
-    <h3>View reviews</h3>
-    <ol>
-        <li>Get only <input type="text" id="sqliteLimit" size="5" value="150"> reviews. <input type="checkbox" id="sqliteRecent" checked> Most recent? (If unchecked, show the oldest.)
-        <li>Upload your <b>collection.anki2</b> file, usually found in <tt>Documents/Anki/&lt;your name&gt;/<b>collection.anki2</b></tt> <input type="file" id="sqliteFile" name="files">
-    </ol>
+                        <div class="divider"><span>OR</span></div>
 
+                        <div class="import-option">
+                            <div class="option-header">
+                                <span class="material-icons">link</span>
+                                <h4>Import from URL</h4>
+                            </div>
+                            <div class="url-input-container">
+                                <input type="text" id="ankiURL" placeholder="https://ankiweb.net/shared/download/..." class="url-input">
+                                <button id="ankiURLSubmit" class="btn primary">Import</button>
+                            </div>
+                            <p class="hint">Use the direct download link from <a href="https://ankiweb.net/shared/decks/" target="_blank">Ankiweb Shared Decks</a></p>
+                        </div>
+                    </div>
+
+                    <div class="display-options">
+                        <label class="toggle">
+                            <input type="checkbox" id="showImage">
+                            <span class="toggle-slider"></span>
+                            <span class="toggle-label">Show images in cards</span>
+                        </label>
+                        <p class="hint warning">Images may cause longer loading times for large decks</p>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="reviews-tab">
+                    <h3>Analyze Review Performance</h3>
+                    <div class="reviews-options">
+                        <div class="option-header">
+                            <span class="material-icons">analytics</span>
+                            <h4>Import your review history</h4>
+                        </div>
+                        
+                        <div class="review-settings">
+                            <div class="setting-group">
+                                <label for="sqliteLimit">Number of reviews to analyze:</label>
+                                <input type="number" id="sqliteLimit" min="1" max="1000" value="150" class="number-input">
+                            </div>
+                            
+                            <label class="toggle">
+                                <input type="checkbox" id="sqliteRecent" checked>
+                                <span class="toggle-slider"></span>
+                                <span class="toggle-label">Show most recent reviews</span>
+                            </label>
+                        </div>
+                        
+                        <div class="file-input-container">
+                            <label for="sqliteFile" class="file-input-label">
+                                <span class="material-icons">folder_open</span>
+                                <span>Choose collection.anki2 file</span>
+                            </label>
+                            <input type="file" id="sqliteFile" name="files" accept=".anki2" class="file-input">
+                            <span class="file-name" id="sqliteFileName">No file chosen</span>
+                        </div>
+                        
+                        <p class="hint">You can find your collection.anki2 file in your Anki folder: <code>Documents/Anki/&lt;profile name&gt;/collection.anki2</code></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Section -->
+            <div id="anki" class="results-container"></div>
+            <div id="reviews" class="results-container"></div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>Made by <a href="https://github.com/fasiha/fuzzy-anki" target="_blank">fasiha</a> • <a href="https://github.com/fasiha/fuzzy-anki" class="github-link" target="_blank"><span class="material-icons">code</span> View on GitHub</a></p>
+        </footer>
     </div>
 
-    <div id="anki"></div>
-
-    <a href="https://github.com/fasiha/fuzzy-anki"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/a6677b08c955af8400f44c6298f40e7d19cc5b2d/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f677261795f3664366436642e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_gray_6d6d6d.png"></a>
+    <!-- App Scripts -->
+    <script src="apkg.js" charset="utf-8"></script>
+    <script src="app.js" charset="utf-8"></script>
 </body>
 </html>
