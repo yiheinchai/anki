@@ -1,51 +1,36 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Tab switching functionality
+    // Tab switching
     const tabBtns = document.querySelectorAll('.tab-btn');
     const tabContents = document.querySelectorAll('.tab-content');
     
     tabBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            // Remove active class from all buttons and contents
             tabBtns.forEach(b => b.classList.remove('active'));
             tabContents.forEach(c => c.classList.remove('active'));
             
-            // Add active class to clicked button and corresponding content
             btn.classList.add('active');
-            const tabId = `${btn.dataset.tab}-tab`;
-            document.getElementById(tabId).classList.add('active');
+            document.getElementById(`${btn.dataset.tab}-tab`).classList.add('active');
         });
     });
     
-    // Display filename when file is selected
-    const ankiFileInput = document.getElementById('ankiFile');
-    const ankiFileName = document.getElementById('ankiFileName');
-    
-    if (ankiFileInput) {
-        ankiFileInput.addEventListener('change', function() {
-            if (this.files.length > 0) {
-                ankiFileName.textContent = this.files[0].name;
-            } else {
-                ankiFileName.textContent = 'No file chosen';
-            }
-        });
+    // File input handling
+    function setupFileInput(inputId, labelId) {
+        const input = document.getElementById(inputId);
+        const label = document.getElementById(labelId);
+        
+        if (input && label) {
+            input.addEventListener('change', function() {
+                label.textContent = this.files.length > 0 ? this.files[0].name : 'No file chosen';
+            });
+        }
     }
     
-    const sqliteFileInput = document.getElementById('sqliteFile');
-    const sqliteFileName = document.getElementById('sqliteFileName');
+    setupFileInput('ankiFile', 'ankiFileName');
+    setupFileInput('sqliteFile', 'sqliteFileName');
     
-    if (sqliteFileInput) {
-        sqliteFileInput.addEventListener('change', function() {
-            if (this.files.length > 0) {
-                sqliteFileName.textContent = this.files[0].name;
-            } else {
-                sqliteFileName.textContent = 'No file chosen';
-            }
-        });
-    }
-    
-    // Enhance tables and results after they're created
-    const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
+    // Dynamic table enhancements
+    const observer = new MutationObserver(mutations => {
+        mutations.forEach(mutation => {
             if (mutation.addedNodes.length) {
                 enhanceTables();
                 enhanceCharts();
@@ -53,46 +38,77 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    observer.observe(document.getElementById('anki'), { childList: true, subtree: true });
-    observer.observe(document.getElementById('reviews'), { childList: true, subtree: true });
+    const ankiEl = document.getElementById('anki');
+    const reviewsEl = document.getElementById('reviews');
     
-    // Apply styling to dynamically created tables and charts
+    if (ankiEl) observer.observe(ankiEl, { childList: true, subtree: true });
+    if (reviewsEl) observer.observe(reviewsEl, { childList: true, subtree: true });
+    
+    // Table enhancements
     function enhanceTables() {
-        const tables = document.querySelectorAll('table');
+        const tables = document.querySelectorAll('table:not(.enhanced)');
+        
         tables.forEach(table => {
-            if (!table.classList.contains('enhanced')) {
-                table.classList.add('enhanced');
+            table.classList.add('enhanced');
+            
+            // Add responsive wrapper
+            const wrapper = document.createElement('div');
+            wrapper.className = 'table-responsive';
+            table.parentNode.insertBefore(wrapper, table);
+            wrapper.appendChild(table);
+            
+            // Add sorting capability
+            const headerCells = table.querySelectorAll('th');
+            headerCells.forEach(cell => {
+                cell.addEventListener('click', () => {
+                    sortTable(table, Array.from(headerCells).indexOf(cell));
+                });
                 
-                // Add responsive wrapper
-                const wrapper = document.createElement('div');
-                wrapper.className = 'table-responsive';
-                table.parentNode.insertBefore(wrapper, table);
-                wrapper.appendChild(table);
+                // Add sort icon
+                const sortIcon = document.createElement('span');
+                sortIcon.className = 'sort-icon material-icons';
+                sortIcon.textContent = 'unfold_more';
+                sortIcon.style.fontSize = '14px';
+                cell.appendChild(sortIcon);
+            });
+            
+            // Add export options if large table
+            if (table.querySelectorAll('tr').length > 10) {
+                const controls = document.createElement('div');
+                controls.className = 'table-controls';
+                controls.innerHTML = `
+                    <button class="btn-export">Export CSV</button>
+                    <button class="btn-copy">Copy to Clipboard</button>
+                `;
+                table.parentNode.insertBefore(controls, table);
                 
-                // Add sorting capability
-                const headerCells = table.querySelectorAll('th');
-                headerCells.forEach(cell => {
-                    cell.addEventListener('click', function() {
-                        sortTable(table, Array.from(headerCells).indexOf(cell));
-                    });
-                    
-                    // Add sort icon
-                    const sortIcon = document.createElement('span');
-                    sortIcon.className = 'sort-icon material-icons';
-                    sortIcon.textContent = 'unfold_more';
-                    cell.appendChild(sortIcon);
+                // Attach export functionality
+                controls.querySelector('.btn-export').addEventListener('click', () => {
+                    exportTableToCSV(table);
+                });
+                
+                controls.querySelector('.btn-copy').addEventListener('click', () => {
+                    copyTableToClipboard(table);
                 });
             }
         });
     }
     
+    // Chart enhancements
     function enhanceCharts() {
-        // Add a filter dropdown to each chart section
-        const chartContainers = document.querySelectorAll('#chart, #histogram, #scatter-rep-lapse, #scatter-norm-rep-lapse');
+        const chartContainers = document.querySelectorAll('[id^="chart"], [id^="histogram"], [id^="scatter"]');
         chartContainers.forEach(container => {
             if (!container.parentNode.querySelector('.chart-controls')) {
                 const controlsDiv = document.createElement('div');
                 controlsDiv.className = 'chart-controls';
+                controlsDiv.innerHTML = `
+                    <select class="chart-type-selector">
+                        <option value="line">Line Chart</option>
+                        <option value="bar">Bar Chart</option>
+                        <option value="scatter">Scatter Plot</option>
+                    </select>
+                    <button class="chart-export">Export</button>
+                `;
                 
                 const heading = container.previousElementSibling;
                 if (heading && (heading.tagName === 'H3' || heading.tagName === 'H4')) {
@@ -102,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Table sorting function
+    // Table sorting
     function sortTable(table, colNum) {
         const sortDirection = table.getAttribute('data-sort-dir') === 'asc' ? 'desc' : 'asc';
         table.setAttribute('data-sort-dir', sortDirection);
@@ -110,72 +126,136 @@ document.addEventListener('DOMContentLoaded', function() {
         const tbody = table.querySelector('tbody');
         const rows = Array.from(tbody.querySelectorAll('tr'));
         
-        // Sort the rows
         rows.sort((a, b) => {
-            const aCol = a.querySelectorAll('td')[colNum]?.textContent.trim();
-            const bCol = b.querySelectorAll('td')[colNum]?.textContent.trim();
+            let aVal = a.querySelectorAll('td')[colNum]?.textContent.trim();
+            let bVal = b.querySelectorAll('td')[colNum]?.textContent.trim();
             
             // Handle numeric sorting
-            if (!isNaN(aCol) && !isNaN(bCol)) {
+            if (!isNaN(aVal) && !isNaN(bVal)) {
                 return sortDirection === 'asc' 
-                    ? parseFloat(aCol) - parseFloat(bCol)
-                    : parseFloat(bCol) - parseFloat(aCol);
+                    ? parseFloat(aVal) - parseFloat(bVal)
+                    : parseFloat(bVal) - parseFloat(aVal);
             }
             
-            // Handle string sorting
+            // Try date sorting
+            const aDate = new Date(aVal);
+            const bDate = new Date(bVal);
+            if (!isNaN(aDate) && !isNaN(bDate)) {
+                return sortDirection === 'asc' 
+                    ? aDate - bDate
+                    : bDate - aDate;
+            }
+            
+            // Fall back to string sorting
             return sortDirection === 'asc'
-                ? aCol.localeCompare(bCol)
-                : bCol.localeCompare(aCol);
+                ? aVal.localeCompare(bVal)
+                : bVal.localeCompare(aVal);
         });
         
-        // Update the DOM
         rows.forEach(row => tbody.appendChild(row));
         
         // Update sort icons
         const headers = table.querySelectorAll('th');
         headers.forEach((header, idx) => {
             const icon = header.querySelector('.sort-icon');
-            if (idx === colNum) {
-                icon.textContent = sortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward';
-            } else {
-                icon.textContent = 'unfold_more';
+            if (icon) {
+                icon.textContent = idx === colNum
+                    ? (sortDirection === 'asc' ? 'arrow_upward' : 'arrow_downward')
+                    : 'unfold_more';
             }
         });
     }
     
-    // Add responsive styles for tables
+    // Export table to CSV
+    function exportTableToCSV(table) {
+        const rows = table.querySelectorAll('tr');
+        let csv = [];
+        
+        for (let i = 0; i < rows.length; i++) {
+            const cells = rows[i].querySelectorAll('td, th');
+            const row = [];
+            
+            for (let j = 0; j < cells.length; j++) {
+                let text = cells[j].textContent.trim();
+                // Escape quotes and wrap in quotes if contains comma
+                if (text.includes(',') || text.includes('"')) {
+                    text = '"' + text.replace(/"/g, '""') + '"';
+                }
+                row.push(text);
+            }
+            
+            csv.push(row.join(','));
+        }
+        
+        const csvContent = csv.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'anki_export.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+    
+    // Copy table to clipboard
+    function copyTableToClipboard(table) {
+        const rows = table.querySelectorAll('tr');
+        let text = '';
+        
+        for (let i = 0; i < rows.length; i++) {
+            const cells = rows[i].querySelectorAll('td, th');
+            const rowData = [];
+            
+            for (let j = 0; j < cells.length; j++) {
+                rowData.push(cells[j].textContent.trim());
+            }
+            
+            text += rowData.join('\t') + '\n';
+        }
+        
+        navigator.clipboard.writeText(text).then(() => {
+            alert('Table copied to clipboard');
+        }).catch(err => {
+            console.error('Failed to copy table:', err);
+        });
+    }
+    
+    // Add styles for the additional controls
     const style = document.createElement('style');
     style.textContent = `
         .table-responsive {
-            overflow-x: auto;
-            margin-bottom: var(--spacing-lg);
+            position: relative;
         }
         
-        .sort-icon {
-            font-size: 16px;
-            margin-left: 4px;
-            vertical-align: middle;
-            opacity: 0.5;
-        }
-        
-        th:hover .sort-icon {
-            opacity: 1;
-        }
-        
-        .chart-controls {
+        .table-controls {
             display: flex;
             justify-content: flex-end;
-            margin-bottom: var(--spacing-md);
+            gap: 8px;
+            margin-bottom: 4px;
         }
         
-        @media (max-width: 767px) {
-            table {
-                font-size: 12px;
-            }
-            
-            th, td {
-                padding: 8px;
-            }
+        .btn-export, .btn-copy, .chart-export {
+            padding: 2px 8px;
+            font-size: 11px;
+            background-color: #f1f3f4;
+            border: 1px solid #dadce0;
+            border-radius: 2px;
+            cursor: pointer;
+        }
+        
+        .btn-export:hover, .btn-copy:hover, .chart-export:hover {
+            background-color: #e8eaed;
+        }
+        
+        .chart-type-selector {
+            padding: 2px 4px;
+            font-size: 11px;
+            border: 1px solid #dadce0;
+            border-radius: 2px;
+            background-color: #f1f3f4;
         }
     `;
     document.head.appendChild(style);
