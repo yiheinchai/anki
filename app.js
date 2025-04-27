@@ -617,14 +617,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function clearHighlights(table) {
         if (!table) return;
+        // Select all highlight spans within the specific table
         const highlightedSpans = table.querySelectorAll('span.search-highlight');
+
+        // Collect parent nodes first to avoid issues while modifying the DOM
+        const parentsToNormalize = new Set();
+
         highlightedSpans.forEach(span => {
-             // Replace the span with its text content
-             if (span.parentNode) {
-                 span.parentNode.replaceChild(document.createTextNode(span.textContent || ''), span);
-                 // Normalize adjacent text nodes (optional but good practice)
-                 span.parentNode.normalize();
-             }
+            const parent = span.parentNode;
+            if (parent) {
+                // Replace the span with its text content
+                const textNode = document.createTextNode(span.textContent || '');
+                parent.replaceChild(textNode, span);
+                // Add the parent to the set for normalization later
+                parentsToNormalize.add(parent);
+            } else {
+                // This case shouldn't ideally happen if the span was found,
+                // but good to log if it does.
+                console.warn("Highlight span found without a parentNode:", span);
+            }
+        });
+
+        // Normalize all affected parent nodes *after* all replacements are done
+        parentsToNormalize.forEach(parent => {
+            if (parent && typeof parent.normalize === 'function') {
+                 parent.normalize();
+            }
         });
     }
 
